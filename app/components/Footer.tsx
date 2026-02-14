@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
   FaFacebookF,
@@ -10,6 +11,17 @@ import {
 } from "react-icons/fa";
 
 export default function Footer() {
+  const [mounted, setMounted] = useState(false);
+  const [year, setYear] = useState<number | null>(null);
+
+  // Only render footer on client
+  useEffect(() => {
+    setMounted(true);
+    setYear(new Date().getFullYear()); // safe dynamic year
+  }, []);
+
+  if (!mounted) return null; // render nothing on server
+
   return (
     <footer className="bg-black text-white mt-20">
       <div className="max-w-7xl mx-auto px-8 py-14 grid md:grid-cols-3 gap-10">
@@ -123,7 +135,7 @@ export default function Footer() {
       </div>
 
       <div className="border-t border-gray-800 text-center py-6 text-gray-500 text-sm">
-        © {new Date().getFullYear()} Zenrio Agency. All rights reserved.
+        © {year} Zenrio Agency. All rights reserved.
       </div>
     </footer>
   );
