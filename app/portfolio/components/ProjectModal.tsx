@@ -71,20 +71,21 @@ export default function ProjectModal({
               </button>
 
               {/* HERO Image */}
-              <div className="relative h-[40vh] shrink-0">
+              <div className="relative w-full aspect-video md:h-[40vh] shrink-0 bg-black">
                 <Image
                   src={imageSrc}
                   alt={project.title}
                   fill
-                  className="object-cover"
+                  className="object-contain md:object-cover"
                   sizes="(max-width: 768px) 100vw, 1200px"
                   priority
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40" />
-
-                <div className="absolute bottom-8 left-8">
-                  <h2 className="text-4xl font-bold">{project.title}</h2>
-                  <p className="mt-2 max-w-xl text-gray-300">
+                <div className="absolute bottom-4 md:bottom-8 left-4 md:left-8">
+                  <h2 className="text-2xl md:text-4xl font-bold">
+                    {project.title}
+                  </h2>
+                  <p className="mt-1 md:mt-2 max-w-xl text-gray-300 text-sm md:text-base">
                     {project.tagline}
                   </p>
                 </div>

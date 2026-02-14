@@ -1,7 +1,6 @@
 "use client";
 
-import { useKeenSlider } from "keen-slider/react";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useCallback } from "react";
 
 type Props = {
   images: string[];
@@ -14,94 +13,224 @@ export default function ProjectCarousel({
   activeIndex,
   setActiveIndex,
 }: Props) {
-  const [sliderRef, slider] = useKeenSlider<HTMLDivElement>({
-    loop: images.length > 3,
-    mode: "snap",
-    renderMode: "performance",
+  const containerRef = useRef<HTMLDivElement>(null);
+  const trackRef = useRef<HTMLDivElement>(null);
 
-    slides: {
-      perView: 3,
-      spacing: 20,
-      origin: "center",
+  const total = images.length;
+  const duplicated = [...images, ...images, ...images];
+
+  const currentIndex = useRef(total); // start from middle set
+  const slideWidth = useRef(0);
+  const autoPlayRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Measure responsive width
+  const measure = () => {
+    if (!trackRef.current) return;
+
+    const slide = trackRef.current.querySelector("[data-slide]") as HTMLElement;
+
+    if (!slide) return;
+
+    const style = window.getComputedStyle(trackRef.current);
+    const gap = parseInt(style.columnGap || "20");
+
+    slideWidth.current = slide.offsetWidth + gap;
+  };
+
+  const updatePosition = (animate = true) => {
+    if (!trackRef.current || !containerRef.current) return;
+
+    const offset =
+      containerRef.current.offsetWidth / 2 - slideWidth.current / 2;
+
+    const x = -currentIndex.current * slideWidth.current + offset;
+
+    trackRef.current.style.transition = animate
+      ? "transform 600ms cubic-bezier(0.22, 1, 0.36, 1)"
+      : "none";
+
+    trackRef.current.style.transform = `translate3d(${x}px,0,0)`;
+  };
+
+  // Infinite correction
+  const handleInfinite = () => {
+    if (currentIndex.current >= total * 2) {
+      currentIndex.current = total;
+      updatePosition(false);
+    }
+
+    if (currentIndex.current < total) {
+      currentIndex.current = total * 2 - 1;
+      updatePosition(false);
+    }
+  };
+
+  // Go to specific slide
+  const goTo = useCallback(
+    (index: number) => {
+      currentIndex.current = index + total;
+      setActiveIndex(index);
+      updatePosition(true);
     },
+    [setActiveIndex, total],
+  );
 
-    defaultAnimation: {
-      duration: 1000,
-      easing: (t: number) => 1 - Math.pow(1 - t, 3),
-    },
+  // Next slide (autoplay)
+  const next = useCallback(() => {
+    currentIndex.current += 1;
 
-    slideChanged(s) {
-      setActiveIndex(s.track.details.rel);
-    },
-  });
+    const realIndex =
+      (((currentIndex.current - total) % total) + total) % total;
 
-  // ✅ Auto Slide
+    setActiveIndex(realIndex);
+    updatePosition(true);
+  }, [setActiveIndex, total]);
+
+  // Autoplay (faster)
   useEffect(() => {
-    const instance = slider?.current;
-    if (!instance) return;
+    autoPlayRef.current = setInterval(() => {
+      next();
+    }, 2500);
 
-    const interval = setInterval(() => {
-      instance.next();
-    }, 4500);
+    return () => {
+      if (autoPlayRef.current) clearInterval(autoPlayRef.current);
+    };
+  }, [next]);
 
-    return () => clearInterval(interval);
-  }, [slider]);
+  // Initial setup
+  useEffect(() => {
+    measure();
+    updatePosition(false);
+  }, []);
 
-  const dotsRefs = useRef<HTMLButtonElement[]>([]);
+  // Resize recalculation
+  useEffect(() => {
+    const handleResize = () => {
+      measure();
+      updatePosition(false);
+    };
+
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  // After transition check infinite
+  useEffect(() => {
+    const track = trackRef.current;
+    if (!track) return;
+
+    const onTransitionEnd = () => {
+      handleInfinite();
+    };
+
+    track.addEventListener("transitionend", onTransitionEnd);
+    return () => track.removeEventListener("transitionend", onTransitionEnd);
+  }, []);
+
+  // Drag
+  const startX = useRef(0);
+  const isDragging = useRef(false);
+
+  const onPointerDown = (e: React.PointerEvent) => {
+    isDragging.current = true;
+    startX.current = e.clientX;
+    trackRef.current!.style.transition = "none";
+  };
+
+  const onPointerMove = (e: React.PointerEvent) => {
+    if (!isDragging.current) return;
+
+    const delta = e.clientX - startX.current;
+
+    const offset =
+      containerRef.current!.offsetWidth / 2 - slideWidth.current / 2;
+
+    const x = -currentIndex.current * slideWidth.current + offset + delta;
+
+    trackRef.current!.style.transform = `translate3d(${x}px,0,0)`;
+  };
+
+  const onPointerUp = (e: React.PointerEvent) => {
+    if (!isDragging.current) return;
+
+    const delta = e.clientX - startX.current;
+    isDragging.current = false;
+
+    if (delta < -50) currentIndex.current += 1;
+    if (delta > 50) currentIndex.current -= 1;
+
+    const realIndex =
+      (((currentIndex.current - total) % total) + total) % total;
+
+    setActiveIndex(realIndex);
+    updatePosition(true);
+  };
 
   return (
-    <div className="w-full">
-      <div ref={sliderRef} className="keen-slider py-6">
-        {images.map((img, i) => (
-          <div
-            key={i}
-            onClick={() => slider.current?.moveToIdx(i)}
-            className={`keen-slider__slide flex justify-center transition-all duration-500 cursor-pointer`}
-          >
-            <div
-              className={`
-                relative rounded-2xl overflow-hidden
-                transition-all duration-500
-                ${
-                  activeIndex === i
-                    ? "scale-110 opacity-100 z-20"
-                    : "scale-90 opacity-40"
-                }
-                h-[160px] w-full
-              `}
-            >
-              <img src={img} alt="" className="object-cover w-full h-full" />
+    <div className="w-full select-none">
+      <div ref={containerRef} className="overflow-hidden w-full">
+        <div
+          ref={trackRef}
+          className="flex gap-5"
+          style={{ willChange: "transform" }}
+          onPointerDown={onPointerDown}
+          onPointerMove={onPointerMove}
+          onPointerUp={onPointerUp}
+          onPointerLeave={onPointerUp}
+        >
+          {duplicated.map((img, i) => {
+            const realIndex = i % total;
+            const isActive = realIndex === activeIndex;
 
-              {/* subtle glow for active */}
-              {activeIndex === i && (
-                <div className="absolute inset-0 ring-2 ring-white rounded-2xl pointer-events-none" />
-              )}
-            </div>
-          </div>
-        ))}
+            return (
+              <div
+                key={i}
+                data-slide
+                onClick={() => goTo(realIndex)}
+                className="
+    flex-shrink-0
+    w-[85%] sm:w-[65%] md:w-[45%] lg:w-[320px]
+    transition-all duration-500
+    cursor-pointer
+  "
+              >
+                <div
+                  className={`relative rounded-2xl overflow-hidden transition-all duration-500 ${
+                    isActive
+                      ? "scale-110 opacity-100 z-20"
+                      : "scale-90 opacity-40"
+                  }`}
+                >
+                  {/* Responsive 16:9 container */}
+                  <div className="w-full aspect-video">
+                    <img
+                      src={img}
+                      className="w-full h-full object-contain md:object-cover"
+                      alt={`Project image ${i + 1}`}
+                    />
+                  </div>
+
+                  {isActive && (
+                    <div className="absolute inset-0 ring-2 ring-white rounded-2xl pointer-events-none" />
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
       </div>
 
-      {/* DOTS */}
-      <div className="relative flex justify-center gap-2 mt-6">
+      {/* Dots */}
+      <div className="flex justify-center gap-3 mt-6">
         {images.map((_, idx) => (
           <button
             key={idx}
-            onClick={() => slider.current?.moveToIdx(idx)}
-            className="w-2.5 h-2.5 rounded-full bg-white/20 transition-colors"
-            ref={(el) => {
-              if (el) dotsRefs.current[idx] = el;
-            }}
+            onClick={() => goTo(idx)}
+            className={`h-2.5 rounded-full transition-all duration-300 ${
+              activeIndex === idx ? "bg-white w-6" : "bg-white/30 w-2.5"
+            }`}
           />
         ))}
-
-        {dotsRefs.current[activeIndex] && (
-          <div
-            className="absolute top-0 w-2.5 h-2.5 rounded-full bg-white transition-all duration-300"
-            style={{
-              left: dotsRefs.current[activeIndex].offsetLeft,
-            }}
-          />
-        )}
       </div>
     </div>
   );

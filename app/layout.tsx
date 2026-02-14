@@ -26,9 +26,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} .no-scrollbar::-webkit-scrollbar`}
-      >
+      <body className="no-scrollbar::-webkit-scrollbar">
         {children}
         <Footer />
       </body>
