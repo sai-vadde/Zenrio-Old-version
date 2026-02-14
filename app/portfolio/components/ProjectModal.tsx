@@ -2,7 +2,6 @@
 
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
-
 import { Project } from "@/data/projects";
 import ProjectCarousel from "./ProjectCarousel";
 import { useEffect, useState } from "react";
@@ -14,19 +13,26 @@ export default function ProjectModal({
   project: Project | null;
   onClose: () => void;
 }) {
-  useEffect(() => {
-    // Disable background scrolling when modal is open
-    document.body.style.overflow = project ? "hidden" : "";
+  const [activeIndex, setActiveIndex] = useState(0);
 
+  // Disable background scroll
+  useEffect(() => {
+    document.body.style.overflow = project ? "hidden" : "";
     return () => {
       document.body.style.overflow = "";
     };
   }, [project]);
-  const [activeIndex, setActiveIndex] = useState(0);
 
+  // Reset index when project changes
   useEffect(() => {
     if (project) setActiveIndex(0);
   }, [project]);
+
+  // ✅ Safe image source
+  const imageSrc =
+    project?.images?.[activeIndex] && project.images[activeIndex] !== ""
+      ? project.images[activeIndex]
+      : "/placeholder.jpg"; // Make sure this exists in /public
 
   return (
     <AnimatePresence>
@@ -47,46 +53,17 @@ export default function ProjectModal({
             className="fixed inset-0 z-50 flex items-center justify-center p-4 md:p-8 overflow-x-hidden"
           >
             <div className="relative flex h-[90vh] w-full max-w-5xl flex-col rounded-3xl overflow-hidden bg-black text-white shadow-2xl">
-              {/* ✅ NEW Circular Close Button "className=relative flex h-[90vh] w-full max-w-5xl flex-col rounded-2xl bg-black text-white shadow-2xl"  */}
+              {/* Close Button */}
               <button
                 onClick={onClose}
-                className="
-    absolute 
-    right-4 top-4
-    sm:right-6 sm:top-6
-    md:right-8 md:top-8
-    z-50
-    
-    overflow-hidden group
-    flex items-center justify-center
-    
-    px-4 sm:px-6 md:px-7
-    h-9 sm:h-10 md:h-11
-    
-    rounded-full
-    bg-black
-    text-white
-    
-    text-xs sm:text-sm md:text-base
-    font-medium tracking-wide
-    
-    transition-all duration-300
-    shadow-lg
-    active:scale-95
-  "
+                className="absolute right-4 top-4 sm:right-6 sm:top-6 md:right-8 md:top-8 z-50
+                overflow-hidden group flex items-center justify-center
+                px-4 sm:px-6 md:px-7 h-9 sm:h-10 md:h-11
+                rounded-full bg-black text-white
+                text-xs sm:text-sm md:text-base font-medium tracking-wide
+                transition-all duration-300 shadow-lg active:scale-95"
               >
-                {/* Sliding Reveal Layer */}
-                <span
-                  className="
-      absolute inset-0
-      bg-white
-      translate-y-full
-      group-hover:translate-y-0
-      transition-transform duration-300 ease-in-out
-    "
-                />
-
-                {/* Content */}
+                <span className="absolute inset-0 bg-white translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-in-out" />
                 <span className="relative z-10 flex items-center gap-2 group-hover:text-black transition-colors duration-300">
                   <span className="hidden sm:inline">Close</span>
                   <span>✕</span>
@@ -96,10 +73,12 @@ export default function ProjectModal({
               {/* HERO Image */}
               <div className="relative w-full aspect-video md:h-[40vh] shrink-0 bg-black">
                 <Image
-                  src={project.images[activeIndex]}
+                  src={imageSrc}
                   alt={project.title}
                   fill
                   className="object-contain md:object-cover"
+                  sizes="(max-width: 768px) 100vw, 1200px"
+                  priority
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40" />
                 <div className="absolute bottom-4 md:bottom-8 left-4 md:left-8">
@@ -119,13 +98,15 @@ export default function ProjectModal({
                 onTouchMove={(e) => e.stopPropagation()}
               >
                 {/* Carousel */}
-                <div className="w-full overflow-y-hidden">
-                  <ProjectCarousel
-                    images={project.images}
-                    activeIndex={activeIndex}
-                    setActiveIndex={setActiveIndex}
-                  />
-                </div>
+                {project.images?.length > 0 && (
+                  <div className="w-full overflow-y-hidden">
+                    <ProjectCarousel
+                      images={project.images}
+                      activeIndex={activeIndex}
+                      setActiveIndex={setActiveIndex}
+                    />
+                  </div>
+                )}
 
                 {/* Description */}
                 <div className="w-full max-w-full">
@@ -135,7 +116,7 @@ export default function ProjectModal({
 
                   {/* Tech Stack */}
                   <div className="flex flex-wrap gap-2 mt-4">
-                    {project.tech.map((t) => (
+                    {project.tech?.map((t) => (
                       <span
                         key={t}
                         className="rounded-full bg-white/10 px-3 py-1 text-sm"
@@ -151,9 +132,10 @@ export default function ProjectModal({
                       <a
                         href={project.github}
                         target="_blank"
+                        rel="noopener noreferrer"
                         className="rounded-full border border-white/20 px-6 py-3 hover:bg-white/10"
                       >
-                        GitHu
+                        GitHub
                       </a>
                     )}
 
