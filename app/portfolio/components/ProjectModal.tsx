@@ -51,20 +51,46 @@ export default function ProjectModal({
               <button
                 onClick={onClose}
                 className="
-                  absolute right-6 top-6 z-50
-                  flex items-center justify-center
-                  w-11 h-11
-                  rounded-full
-                  bg-white/10 backdrop-blur-md
-                  border border-white/20
-                  text-white text-xl font-bold
-                  hover:bg-white hover:text-black
-                  hover:rotate-90
-                  transition-all duration-300
-                  shadow-lg
-                "
+    absolute 
+    right-4 top-4
+    sm:right-6 sm:top-6
+    md:right-8 md:top-8
+    z-50
+    
+    overflow-hidden group
+    flex items-center justify-center
+    
+    px-4 sm:px-6 md:px-7
+    h-9 sm:h-10 md:h-11
+    
+    rounded-full
+    bg-black
+    text-white
+    
+    text-xs sm:text-sm md:text-base
+    font-medium tracking-wide
+    
+    transition-all duration-300
+    shadow-lg
+    active:scale-95
+  "
               >
-                ✕
+                {/* Sliding Reveal Layer */}
+                <span
+                  className="
+      absolute inset-0
+      bg-white
+      translate-y-full
+      group-hover:translate-y-0
+      transition-transform duration-300 ease-in-out
+    "
+                />
+
+                {/* Content */}
+                <span className="relative z-10 flex items-center gap-2 group-hover:text-black transition-colors duration-300">
+                  <span className="hidden sm:inline">Close</span>
+                  <span>✕</span>
+                </span>
               </button>
 
               {/* HERO Image */}
