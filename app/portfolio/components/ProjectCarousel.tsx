@@ -188,14 +188,11 @@ export default function ProjectCarousel({
                 data-slide
                 onClick={() => goTo(realIndex)}
                 className="
-                  flex-shrink-0
-                  w-[85%]
-                  sm:w-[65%]
-                  md:w-[45%]
-                  lg:w-[320px]
-                  transition-all duration-500
-                  cursor-pointer
-                "
+    flex-shrink-0
+    w-[85%] sm:w-[65%] md:w-[45%] lg:w-[320px]
+    transition-all duration-500
+    cursor-pointer
+  "
               >
                 <div
                   className={`relative rounded-2xl overflow-hidden transition-all duration-500 ${
@@ -204,7 +201,14 @@ export default function ProjectCarousel({
                       : "scale-90 opacity-40"
                   }`}
                 >
-                  <img src={img} className="w-full h-[160px] object-cover" />
+                  {/* Responsive 16:9 container */}
+                  <div className="w-full aspect-video">
+                    <img
+                      src={img}
+                      className="w-full h-full object-contain md:object-cover"
+                      alt={`Project image ${i + 1}`}
+                    />
+                  </div>
 
                   {isActive && (
                     <div className="absolute inset-0 ring-2 ring-white rounded-2xl pointer-events-none" />
