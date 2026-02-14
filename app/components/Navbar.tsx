@@ -57,8 +57,15 @@ export default function Navbar() {
                 }`}
               >
                 {link.name}
+
                 {isActive(link.href) && (
-                  <span className="absolute -bottom-2 left-0 w-full h-[2px] bg-black rounded-full" />
+                  <motion.span
+                    layoutId="underline" // ensures smooth transition between links
+                    className="absolute -bottom-2 left-0 h-[2px] bg-black rounded-full"
+                    initial={{ width: 0 }}
+                    animate={{ width: "100%" }}
+                    transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                  />
                 )}
               </Link>
             ))}
