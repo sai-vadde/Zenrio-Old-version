@@ -93,7 +93,7 @@ export default function ProjectModal({
 
               {/* Scrollable Content */}
               <div
-                className="flex-1 overflow-y-auto p-8 space-y-10 no-scrollbar"
+                className="flex-1 overflow-y-auto p-8 space-y-10 no-scrollbar backdrop-blur-2xl"
                 onWheel={(e) => e.stopPropagation()}
                 onTouchMove={(e) => e.stopPropagation()}
               >
