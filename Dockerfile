@@ -1,33 +1,18 @@
-# ---- 1. Install dependencies ----
-FROM node:20-alpine AS deps
+# ---------- Build Stage ----------
+FROM node:20 AS builder
 WORKDIR /app
 
 COPY package.json package-lock.json* ./
 RUN npm ci
 
-# ---- 2. Build the app ----
-FROM node:20-alpine AS builder
-WORKDIR /app
-COPY --from=deps /app/node_modules ./node_modules
 COPY . .
-
 RUN npm run build
 
-# ---- 3. Run production server ----
-FROM node:20-alpine AS runner
-WORKDIR /app
+# ---------- Production Stage ----------
+FROM nginx:alpine
 
-ENV NODE_ENV=production
+COPY --from=builder /app/out /usr/share/nginx/html
 
-RUN addgroup -g 1001 -S nodejs
-RUN adduser -S nextjs -u 1001
+EXPOSE 80
 
-COPY --from=builder /app/public ./public
-COPY --from=builder /app/.next ./.next
-COPY --from=builder /app/package.json ./
-
-USER nextjs
-
-EXPOSE 3000
-
-CMD ["npm", "start"]
+CMD ["nginx", "-g", "daemon off;"]
